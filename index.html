@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stem Goede Doelen</title>
+    <style>
+        *{box-sizing:border-box;font-family:-apple-system,sans-serif}
+        body{background:#667eea;padding:10px;margin:0}
+        .box{background:#fff;border-radius:12px;padding:20px;max-width:500px;margin:0 auto}
+        h1{text-align:center;font-size:20px;margin:0 0 15px}
+        input[type=text]{width:100%;padding:15px;border:2px solid #667eea;border-radius:8px;font-size:16px;margin:10px 0}
+        .btn{width:100%;padding:15px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:16px;margin:5px 0}
+        .btn:disabled{background:#ccc}
+        .doel{border:2px solid #ddd;border-radius:8px;padding:12px;margin:8px 0;background:#f9f9f9}
+        .doel.on{border-color:#667eea;background:#f0f4ff}
+        .doel label{display:flex;align-items:center;gap:10px;font-size:14px}
+        .doel input[type=checkbox]{width:22px;height:22px}
+        .pts{margin-top:10px;display:none}
+        .doel.on .pts{display:flex;gap:5px;flex-wrap:wrap}
+        .pts button{width:40px;height:40px;border-radius:50%;border:2px solid #ddd;background:#fff;font-size:16px;font-weight:bold}
+        .pts button.on{background:#667eea;color:#fff;border-color:#667eea}
+        .pts button.used{opacity:0.3}
+        .sum{background:#f5f5f5;padding:15px;border-radius:8px;margin:15px 0}
+        .sum div{padding:5px 0;display:flex;justify-content:space-between}
+        .err{color:red;text-align:center;padding:10px}
+        .info{background:#e8f4fd;padding:10px;border-radius:8px;margin:10px 0;font-size:13px}
+        .success{background:#d4edda;color:#155724;padding:20px;border-radius:8px;text-align:center;display:none}
+        .loading{opacity:0.6;pointer-events:none}
+    </style>
+</head>
+<body>
+<div class="box" id="container">
+    <h1>🗳️ Stem Goede Doelen</h1>
+    
+    <div id="step1">
+        <p><b>Vul uw naam in:</b></p>
+        <input type="text" id="naam" placeholder="Uw naam">
+        <button class="btn" onclick="startStemmen()">Start stemmen →</button>
+    </div>
+    
+    <div id="step2" style="display:none">
+        <p>Welkom <b id="welkom"></b>!</p>
+        <div class="info">Kies 6 doelen en geef elk 1-6 punten (6=hoogste)</div>
+        <p>Gekozen: <b id="tel">0</b>/6</p>
+        <div id="err" class="err"></div>
+        <div id="lijst"></div>
+        <div id="sam" class="sum" style="display:none"></div>
+        <button class="btn" id="verzendBtn" disabled onclick="verstuur()">✓ Verstuur stem</button>
+    </div>
+    
+    <div id="success" class="success">
+        <h2>✅ Bedankt!</h2>
+        <p>Je stem is succesvol opgeslagen.</p>
+        <button class="btn" onclick="opnieuw()">Nieuwe stem invoeren</button>
+    </div>
+</div>
+
+<script>
+// BELANGRIJK: Vervang dit met jouw Google Apps Script URL
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGU9FEJq8YgbcUOWhgSmQzYhYe0qtcwYTBjPU5ydbLndH3YvqXSmvdAmtvWNfwh_nh/exec';
+
+var D=["Red een kind","Tear","Stichting Geloof en Handel","Stichting Gave","SDOK","Genadebank","Hospice Nijkerk","Stichting Schuilplaats","ZOA","Open Doors","Tot Heil des Volks","Orhei/Gezinsmasters","Bralectah/Luisterpost","Bartimeus","Dit Koningskind","De Verre Naasten","Gevangenenzorg","Agape","Tamar Center","Mercy Ships","Dorcas","Salaam","Fundament","MAF","Bijbelvereniging"];
+var sel={};
+var naam='';
+
+function startStemmen(){
+    naam=document.getElementById('naam').value;
+    if(!naam||naam.trim()===''){
+        alert('Vul eerst uw naam in!');
+        return;
+    }
+    naam=naam.trim();
+    document.getElementById('welkom').innerHTML=naam;
+    document.getElementById('step1').style.display='none';
+    document.getElementById('step2').style.display='block';
+    maakLijst();
+}
+
+function maakLijst(){
+    var h='';
+    for(var i=0;i<D.length;i++){
+        h+='<div class="doel" id="d'+i+'">';
+        h+='<label><input type="checkbox" onchange="toggle('+i+')"><span>'+(i+1)+'. '+D[i]+'</span></label>';
+        h+='<div class="pts" id="p'+i+'">';
+        for(var j=1;j<=6;j++){
+            h+='<button type="button" onclick="punt('+i+','+j+')">'+j+'</button>';
+        }
+        h+='</div></div>';
+    }
+    document.getElementById('lijst').innerHTML=h;
+}
+
+function toggle(i){
+    if(sel[i]!==undefined){
+        delete sel[i];
+    }else{
+        if(Object.keys(sel).length>=6){
+            document.getElementById('err').innerHTML='Maximaal 6 doelen!';
+            update();
+            return;
+        }
+        sel[i]=null;
+    }
+    update();
+}
+
+function punt(i,p){
+    if(sel[i]===undefined)return;
+    for(var k in sel){
+        if(parseInt(k)!==i&&sel[k]===p){
+            document.getElementById('err').innerHTML=p+' punten al gebruikt!';
+            return;
+        }
+    }
+    sel[i]=p;
+    update();
+}
+
+function update(){
+    var n=Object.keys(sel).length;
+    var used={};
+    var ok=(n===6);
+    
+    document.getElementById('tel').innerHTML=n;
+    document.getElementById('err').innerHTML='';
+    
+    for(var k in sel){
+        if(sel[k]===null)ok=false;
+        else used[sel[k]]=true;
+    }
+    
+    for(var i=0;i<D.length;i++){
+        var d=document.getElementById('d'+i);
+        if(!d)continue;
+        var cb=d.getElementsByTagName('input')[0];
+        var btns=d.getElementsByTagName('button');
+        
+        if(sel[i]!==undefined){
+            d.className='doel on';
+            cb.checked=true;
+        }else{
+            d.className='doel';
+            cb.checked=false;
+        }
+        
+        for(var j=0;j<btns.length;j++){
+            var pt=j+1;
+            if(sel[i]===pt)btns[j].className='on';
+            else if(used[pt])btns[j].className='used';
+            else btns[j].className='';
+        }
+    }
+    
+    var sam=document.getElementById('sam');
+    var arr=[];
+    for(var k in sel){
+        if(sel[k]!==null)arr.push({i:parseInt(k),p:sel[k]});
+    }
+    arr.sort(function(a,b){return b.p-a.p});
+    
+    if(arr.length>0){
+        var h='<b>Jouw keuze:</b>';
+        for(var x=0;x<arr.length;x++){
+            h+='<div><span>'+D[arr[x].i]+'</span><b>'+arr[x].p+' pt</b></div>';
+        }
+        sam.innerHTML=h;
+        sam.style.display='block';
+    }else{
+        sam.style.display='none';
+    }
+    
+    document.getElementById('verzendBtn').disabled=!(ok&&Object.keys(used).length===6);
+}
+
+function verstuur(){
+    var arr=[];
+    for(var k in sel){
+        arr.push({doel:D[parseInt(k)],punten:sel[k]});
+    }
+    arr.sort(function(a,b){return b.punten-a.punten});
+    
+    var data={
+        naam:naam,
+        keuzes:arr
+    };
+    
+    // Toon loading state
+    document.getElementById('container').className='box loading';
+    document.getElementById('verzendBtn').innerHTML='Bezig met versturen...';
+    
+    // Verstuur naar Google Sheets
+    fetch(SCRIPT_URL,{
+        method:'POST',
+        mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(data)
+    })
+    .then(function(){
+        // Toon succes (no-cors geeft geen response, maar data is wel verstuurd)
+        document.getElementById('step2').style.display='none';
+        document.getElementById('success').style.display='block';
+        document.getElementById('container').className='box';
+    })
+    .catch(function(err){
+        alert('Er ging iets mis. Probeer opnieuw.');
+        document.getElementById('container').className='box';
+        document.getElementById('verzendBtn').innerHTML='✓ Verstuur stem';
+    });
+}
+
+function opnieuw(){
+    sel={};
+    naam='';
+    document.getElementById('naam').value='';
+    document.getElementById('step1').style.display='block';
+    document.getElementById('step2').style.display='none';
+    document.getElementById('success').style.display='none';
+    maakLijst();
+    update();
+}
+</script>
+</body>
+</html>

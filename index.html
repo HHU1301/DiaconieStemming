@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stem Goede Doelen</title>
+    <title>Breng je stem uit voor de Goede Doelen die op het collecterooster moeten komen</title>
     <style>
         *{box-sizing:border-box;font-family:-apple-system,sans-serif}
         body{background:#667eea;padding:10px;margin:0}
@@ -31,17 +31,17 @@
 </head>
 <body>
 <div class="box" id="container">
-    <h1>🗳️ Stem Goede Doelen</h1>
+    <h1>🗳️ Stem Goede Doelen voor op het collecterooster</h1>
     
     <div id="step1">
-        <p><b>Vul uw naam in:</b></p>
-        <input type="text" id="naam" placeholder="Uw naam">
+        <p><b>Vul je naam in:</b></p>
+        <input type="text" id="naam" placeholder="Jouw naam">
         <button class="btn" onclick="startStemmen()">Start stemmen →</button>
     </div>
     
     <div id="step2" style="display:none">
         <p>Welkom <b id="welkom"></b>!</p>
-        <div class="info">Kies 6 doelen en geef elk 1-6 punten (6=hoogste)</div>
+        <div class="info">Uit de onderstaande lijst kies je 6 doelen. Elk van deze doelen kun je met punten (1-6) nomineren. De 6 doelen met het meest aantal punten zullen op het collecterooster komen te staan</div>
         <p>Gekozen: <b id="tel">0</b>/6</p>
         <div id="err" class="err"></div>
         <div id="lijst"></div>
@@ -222,4 +222,5 @@ function opnieuw(){
 </body>
 
 </html>
+
 
